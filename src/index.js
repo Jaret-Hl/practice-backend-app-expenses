@@ -5,6 +5,7 @@ import {PORT } from './config.js';
 
 import expensesRoutes from './routes/expenses.routes.js';
 import tenantsRoutes from './routes/tenant.routes.js';
+import enterprisesRoutes from './routes/enterprises.routes.js';
 import morgan from 'morgan';
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use('/api', expensesRoutes);
 app.use('/api', tenantsRoutes);
+app.use('/api', enterprisesRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
