@@ -32,20 +32,20 @@ export const getTenantById = async (req, res) => {
   res.json(data);
 };
 
-/* export const createTenant = async (req, res) => {
-  const { title, category, amount, date, userId } = req.body;
-  if (!title || !category || !amount || !date || !userId) {
+export const createTenant = async (req, res) => {
+  const { name, description, link, is_active, created_by_user_id } = req.body;
+  if (!name || !description || !link || is_active === undefined || !created_by_user_id) {
     return res.status(400).json({ error: 'Faltan datos requeridos' });
   }
   const { data, error } = await supabase
-    .from('expense')
-    .insert([{ title, category, amount, date, userId }])
+    .from('tenant')
+    .insert([{ name, description, link, is_active, created_by_user_id }])
     .select();
 
-  if (error) return res.status(500).json({ error: 'No se pudo crear el gasto' });
+  if (error) return res.status(500).json({ error: 'No se pudo crear el tenant' });
   res.status(201).json(data[0]);
 }
-*/
+
 
 export const updateTenant = async (req, res) => {
   const { id } = req.params;
