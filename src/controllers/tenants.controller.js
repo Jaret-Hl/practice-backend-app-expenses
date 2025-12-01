@@ -49,7 +49,13 @@ export const createTenant = async (req, res) => {
 
 export const updateTenant = async (req, res) => {
   const { id } = req.params;
-  const updatedTenant = req.body;
+  
+  const updatedTenant = {
+    ...req.body,
+    updated_at: new Date().toISOString(),
+    updated_by_user_id: req.user?.id || req.body.updated_by_user_id || null
+  };
+
   const { data, error } = await supabase
     .from("tenant")
     .update(updatedTenant)
@@ -58,8 +64,10 @@ export const updateTenant = async (req, res) => {
 
   if (error)
     return res.status(500).json({ error: "No se pudo actualizar el tenant" });
+
   res.json(data[0]);
 };
+
 
 export const deleteTenant = async (req, res) => {
   const { id } = req.params;
