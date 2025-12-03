@@ -81,3 +81,16 @@ export const deleteTenant = async (req, res) => {
     return res.status(500).json({ error: "No se pudo eliminar el tenant" });
   res.json({ message: `Tenant with ID: ${id} deleted` });
 };
+
+export const inactivateTenant = async (req, res) => {
+  const { id } = req.params;
+  const { data, error } = await supabase
+    .from("tenant")
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select();
+  if (error)
+    return res.status(500).json({ error: "No se pudo inactivar el tenant" });
+
+  res.json(data[0]);
+}
