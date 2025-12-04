@@ -1,7 +1,19 @@
 import { supabase } from '../db.js'
 
 export const getEnterprise = async (req, res) => {
-  const { data, error } = await supabase.from('enterprise').select('*')
+  const { search } = req.query;
+  
+  let query = supabase.from('enterprise').select('*')
+
+  const term = (search || "").trim();
+  if(term.length >= 3) {
+    const like = `%${term}%`;
+    query = query.or(`name.ilike.${like},plaza.ilike.${like}`);
+  } else if (term.length > 0) {
+    return res.status(400).json({ warning: "El término de búsqueda debe tener al menos 3 caracteres" });
+  }
+  const { data, error } = await query;
+  // const { data, error } = await supabase.from('enterprise').select('*')
   if (error) return res.status(500).json({ error: error.message })
   res.json(data)
 }
