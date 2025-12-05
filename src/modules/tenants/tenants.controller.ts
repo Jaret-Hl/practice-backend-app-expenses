@@ -1,7 +1,8 @@
 // src/controllers/tenants.controller.js
-import { supabase } from "../db.js";
+import { Request, Response } from "express";
+import { supabase } from '../../core/db.js';
 
-export const getTenants = async (req, res) => {
+export const getTenants = async (req: Request, res: Response) => {
   //1. capturar el parametro de consulta "active" y "search"
   const { is_active, search } = req.query;
   // considerar paginación en el futuro
@@ -18,7 +19,8 @@ export const getTenants = async (req, res) => {
     query = query.eq("is_active", isActiveBool);
   }
 
-  const term = (search || "").trim();
+  // const term = (search || "").trim(); quitar esta línea
+  const term = typeof search === "string" ? search.trim() : "";
   if(term.length >= 3) {
     const like = `%${term}%`;
     query = query.or(`name.ilike.${like},description.ilike.${like}`);
@@ -32,11 +34,11 @@ export const getTenants = async (req, res) => {
   res.json(data);
 };
 
-export const getTenantById = async (req, res) => {
+export const getTenantById = async (req: Request, res: Response) => {
   const { id } = req.params;
   
   // Validar que id sea un número
-  if (isNaN(id) || !id) {
+  if (isNaN(Number(id)) || !id) {
     return res.status(400).json({ error: "El ID debe ser un número válido" });
   }
 
@@ -53,7 +55,7 @@ export const getTenantById = async (req, res) => {
   res.json(data);
 };
 
-export const createTenant = async (req, res) => {
+export const createTenant = async (req: Request, res: Response) => {
   const { name, description, link, is_active, created_by_user_id } = req.body;
   if (
     !name ||
@@ -74,13 +76,13 @@ export const createTenant = async (req, res) => {
   res.status(201).json(data[0]);
 };
 
-export const updateTenant = async (req, res) => {
+export const updateTenant = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const updatedTenant = {
     ...req.body,
     updated_at: new Date().toISOString(),
-    updated_by_user_id: req.user?.id || req.body.updated_by_user_id || null,
+    updated_by_user_id: req.body.updated_by_user_id || null,
   };
 
   const { data, error } = await supabase
@@ -96,7 +98,7 @@ export const updateTenant = async (req, res) => {
 };
 
 
-export const deleteTenant = async (req, res) => {
+export const deleteTenant = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { data, error } = await supabase
     .from("tenant")
@@ -109,7 +111,7 @@ export const deleteTenant = async (req, res) => {
   res.json({ message: `Tenant with ID: ${id} deleted` });
 };
 
-export const inactivateTenant = async (req, res) => {
+export const inactivateTenant = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { data, error } = await supabase
     .from("tenant")
