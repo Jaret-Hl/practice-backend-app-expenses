@@ -1,23 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import {PORT } from './config.js';
+import path from "path";
+import dotenv from "dotenv";
 
-import expensesRoutes from './modules/expenses/expenses.routes.js';
-import tenantsRoutes from './modules/tenants/tenant.routes';
-import enterprisesRoutes from './modules/enterprises/enterprises.routes';
-import morgan from 'morgan';
-dotenv.config();
+// Busca el .env en la RAÍZ del proyecto
+const root = path.resolve(process.cwd(), ".");
+const envFile = `.env.${process.env.NODE_ENV || "development"}`;
 
-const app = express();
+dotenv.config({ path: path.join(root, envFile) });
+dotenv.config({ path: path.join(root, ".env") });
 
-app.use(cors());
-app.use(morgan('dev'));
-app.use(express.json());
-app.use('/api', expensesRoutes);
-app.use('/api', tenantsRoutes);
-app.use('/api', enterprisesRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+
+import { startServer } from "./core/server.js";
+
+startServer();
