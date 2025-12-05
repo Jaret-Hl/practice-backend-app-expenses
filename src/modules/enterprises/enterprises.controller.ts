@@ -1,4 +1,4 @@
-import { supabase } from '../db.js'
+import { supabase } from '../../db.js'
 
 export const getEnterprise = async (req, res) => {
   const { search } = req.query;

@@ -3,9 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import {PORT } from './config.js';
 
-import expensesRoutes from './routes/expenses.routes.js';
-import tenantsRoutes from './routes/tenant.routes.js';
-import enterprisesRoutes from './routes/enterprises.routes.js';
+import expensesRoutes from './modules/expenses/expenses.routes.js';
+import tenantsRoutes from './modules/tenants/tenant.routes';
+import enterprisesRoutes from './modules/enterprises/enterprises.routes';
 import morgan from 'morgan';
 dotenv.config();
 
