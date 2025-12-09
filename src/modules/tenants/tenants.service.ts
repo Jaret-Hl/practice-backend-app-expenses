@@ -1,4 +1,4 @@
-import { applySearchFilter } from "shared/filters/search.js";
+import { applySearchFilter } from "../../shared/filters/search.js";
 import { supabase } from "../../core/db.js";
 
 export class TenantService {
