@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { verifyJwt } from "../../core/security/jwt.js";
 import { isTokenRevoked } from "../../core/security/tokenBlacklist.js";
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Token no proporcionado" });
@@ -10,7 +10,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
   const token = authHeader.split(" ")[1];
 
-  if (isTokenRevoked(token)) {
+  // Check if token is revoked (now async)
+  const revoked = await isTokenRevoked(token);
+  if (revoked) {
     return res.status(401).json({ error: "Token inválido" });
   }
 
