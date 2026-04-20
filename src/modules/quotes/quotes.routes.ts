@@ -1,16 +1,19 @@
 import { Router } from "express";
 import { getQuotes, getQuotesById, updateQuotes, deleteQuotes, createQuotes } from "../quotes/quotes.controller.js";
+import { authMiddleware } from "../../shared/middlewares/auth.middleware.js";
+import { validate } from "../../shared/middlewares/validate.middleware.js";
+import { QuoteCreateSchema, QuoteUpdateSchema } from "./quotes.schema.js";
 
 const router = Router();
 
-router.get("/quotes", getQuotes);
+router.get("/quotes", authMiddleware, getQuotes);
 
-router.get("/quotes/:id", getQuotesById);
+router.get("/quotes/:id", authMiddleware, getQuotesById);
 
-router.post("/quotes", createQuotes);
+router.post("/quotes", authMiddleware, validate(QuoteCreateSchema), createQuotes);
 
-router.put("/quotes/:id", updateQuotes);
+router.put("/quotes/:id", authMiddleware, validate(QuoteUpdateSchema), updateQuotes);
 
-router.delete("/quotes/:id", deleteQuotes);
+router.delete("/quotes/:id", authMiddleware, deleteQuotes);
 
 export default router;
