@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { EnterpriseService } from "./enterprises.service.js";
+import { EnterpriseUpdateSchema } from "./enterprises.schema.js";
 import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
 
 export const getEnterprises = async (req: Request, res: Response) => {
@@ -82,8 +83,14 @@ export const updateEnterprise = async (req: Request, res: Response) => {
     return res.status(403).json({ error: "No tienes permiso para modificar este recurso" });
   }
 
+  // Validate and parse payload - only include fields that are actually sent
+  const validationResult = EnterpriseUpdateSchema.safeParse(req.body);
+  if (!validationResult.success) {
+    return res.status(400).json({ error: validationResult.error.issues });
+  }
+
   const payload = {
-    ...req.body,
+    ...validationResult.data,
     updated_at: new Date().toISOString(),
   };
 

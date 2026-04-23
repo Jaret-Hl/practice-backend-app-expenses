@@ -4,6 +4,7 @@ export const EnterpriseBaseSchema = z.object({
   name: z.string().min(1),
   code_enterprise: z.string().min(1),
   active_cyh: z.enum(["SI", "NO"]).default("SI"),
+  plaza: z.string().min(1),
 });
 
 export const EnterpriseCreateSchema = EnterpriseBaseSchema.extend({
