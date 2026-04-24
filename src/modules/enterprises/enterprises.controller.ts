@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { EnterpriseService } from "./enterprises.service.js";
 import { EnterpriseUpdateSchema } from "./enterprises.schema.js";
 import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
+import { supabase } from '../../core/db.js';
 
 export const getEnterprises = async (req: Request, res: Response) => {
   const { active_cyh, search, page, limit } = req.query;
@@ -11,16 +12,15 @@ export const getEnterprises = async (req: Request, res: Response) => {
   const { data, error, count } = await EnterpriseService.getAll({
     active_cyh: active_cyh as string,
     search: search as string,
-    userId: userId,
+    userId,
     limit: pagination.limit,
     offset: pagination.offset,
   });
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
-
-  const totalCount = count || data?.length || 0;
+  
+  const totalCount = count || 0;
   const formattedResponse = formatPaginatedResponse(data || [], pagination.page, pagination.limit, totalCount);
-
   res.json(formattedResponse);
 };
 
@@ -70,7 +70,11 @@ export const updateEnterprise = async (req: Request, res: Response) => {
   }
 
   // Check if enterprise exists and user owns it
-  const { data: existingEnterprise, error: fetchError } = await EnterpriseService.getById(id);
+  const { data: existingEnterprise, error: fetchError } = await supabase
+    .from("enterprise")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
 
@@ -83,22 +87,22 @@ export const updateEnterprise = async (req: Request, res: Response) => {
     return res.status(403).json({ error: "No tienes permiso para modificar este recurso" });
   }
 
-  // Validate and parse payload - only include fields that are actually sent
-  const validationResult = EnterpriseUpdateSchema.safeParse(req.body);
-  if (!validationResult.success) {
-    return res.status(400).json({ error: validationResult.error.issues });
-  }
-
-  const payload = {
-    ...validationResult.data,
+  const updatedEnterprise = {
+    ...req.body,
     updated_at: new Date().toISOString(),
+    updated_by_user_id: userId,
   };
 
-  const { data, error } = await EnterpriseService.update(id, payload);
+  const { data, error} = await supabase
+    .from("enterprise")
+    .update(updatedEnterprise)
+    .eq("id", id)
+    .select()
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
 
   res.json(data[0]);
+
 };
 
 export const deleteEnterprise = async (req: Request, res: Response) => {

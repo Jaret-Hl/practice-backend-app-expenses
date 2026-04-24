@@ -17,13 +17,8 @@ export class EnterpriseService {
   }) {
     let query = supabase.from("enterprise").select("*", { count: "exact" });
 
-    // Filter by current user
-    if (userId) {
-      query = query.eq("created_by_user_id", userId);
-    }
-
     if (active_cyh !== undefined) {
-      query = query.eq("active_cyh", active_cyh === "SI" ? "SI" : "NO");
+      query = query.eq("active_cyh", active_cyh === "true");
     }
 
     if (search) {
