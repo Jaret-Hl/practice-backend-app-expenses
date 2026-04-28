@@ -11,5 +11,9 @@ function required(name: string): string {
 export const ENV = {
   SUPABASE_URL: required("SUPABASE_URL"),
   SUPABASE_ANON_KEY: required("SUPABASE_ANON_KEY"),
+  JWT_SECRET: required("JWT_SECRET"),
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "15m",
   PORT: process.env.PORT || "3000",
+  NODE_ENV: process.env.NODE_ENV || "development",
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || "http://localhost:3000",
 };

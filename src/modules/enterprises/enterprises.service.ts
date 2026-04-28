@@ -2,10 +2,23 @@ import { applySearchFilter } from "../../shared/filters/search.js";
 import { supabase } from "../../core/db.js";
 
 export class EnterpriseService {
-  static async getAll({ active_cyh, search }: { active_cyh?: string; search?: string }) {
-    let query = supabase.from("enterprise").select("*");
+  static async getAll({
+    active_cyh,
+    search,
+    userId,
+    limit,
+    offset,
+  }: {
+    active_cyh?: string;
+    search?: string;
+    userId?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    let query = supabase.from("enterprise").select("*", { count: "exact" });
+
     if (active_cyh !== undefined) {
-      query = query.eq("active_cyh", active_cyh === "SI" ? "SI" : "NO");
+      query = query.eq("active_cyh", active_cyh === "true");
     }
 
     if (search) {
@@ -16,8 +29,13 @@ export class EnterpriseService {
       }
     }
 
-    const { data, error } = await query;
-    return { data, error };
+    // Apply pagination
+    if (limit && offset !== undefined) {
+      query = query.range(offset, offset + limit - 1);
+    }
+
+    const { data, error, count } = await query;
+    return { data, error, count };
   }
 
   static async getById(id: number) {
