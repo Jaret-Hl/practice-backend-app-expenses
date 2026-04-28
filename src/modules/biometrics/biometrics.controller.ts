@@ -8,7 +8,7 @@ export const getBiometrics = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const pagination = parsePagination(page as string | number, limit as string | number);
   
-  let query = supabase.from("biometric_device").select("*", { count: "exact" });
+  let query = supabase.from("biometric_device").select("*, tenant:tenant_id(id, name)", { count: "exact" });
   
   // Filter by current user
   if (userId) {
@@ -17,14 +17,14 @@ export const getBiometrics = async (req: Request, res: Response) => {
   
   // 3. aplicar filtro condicionalmente
   if (status !== undefined) {
-    const isActiveBool = status === "INSTALADO" ? true : status === "NO INSTALADO" ? false : null;
+    const isActiveBool = status === "true";
     query = query.eq("status", isActiveBool);
   }
 
   const term = typeof search === "string" ? search.trim() : "";
   if(term.length >= 3) {
     const like = `%${term}%`;
-    query = query.or(`name.ilike.${like},description.ilike.${like}`);
+    query = query.or(`model.ilike.${like},serial_number.ilike.${like}`);
   } else if (term.length > 0) {
     return res.status(400).json({ warning: "El término de búsqueda debe tener al menos 3 caracteres" });
   }
@@ -53,7 +53,7 @@ export const getBiometricById = async (req: Request, res: Response) => {
 
   const { data, error } = await supabase
     .from("biometric_device")
-    .select("*")
+    .select("*, tenant:tenant_id(id, name)")
     .eq("id", parseInt(idStr))
     .single();
 
@@ -84,7 +84,7 @@ export const createBiometric = async (req: Request, res: Response) => {
   const { data, error } = await supabase
     .from("biometric_device")
     .insert([{ tenant_id, brand, model, serial_number, reception_date, installation_date, warranty_period, status, location_state, branch, hc_count, observations, created_by_user_id: userId }])
-    .select();
+    .select("*, tenant:tenant_id(id, name)");
 
   if (error)
     return res.status(500).json({ error: "Error interno del servidor" });
@@ -127,7 +127,7 @@ export const updateBiometric = async (req: Request, res: Response) => {
     .from("biometric_device")
     .update(updatedBiometric)
     .eq("id", id)
-    .select();
+    .select("*, tenant:tenant_id(id, name)");
 
   if (error)
     return res.status(500).json({ error: "Error interno del servidor" });
@@ -177,7 +177,7 @@ export const inactivateBiometric = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { data, error } = await supabase
     .from("biometric_device")
-    .update({ status: "RETIRADO", updated_at: new Date().toISOString() })  // ← Cambiar a "RETIRADO"
+    .update({ status: false, updated_at: new Date().toISOString() })  // ← Cambiar a "RETIRADO"
     .eq("id", id)
     .select();
   if (error)

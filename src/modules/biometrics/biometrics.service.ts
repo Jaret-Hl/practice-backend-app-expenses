@@ -3,7 +3,7 @@ import { supabase } from "../../core/db.js";
 
 export class BiometricService {
   static async getAll({ status, search }: { status?: boolean; search?: string }) {
-    let query = supabase.from("biometric_device").select("*");
+    let query = supabase.from("biometric_device").select("*, tenant:tenant_id(id, name)");
 
     if (status !== undefined) {
       query = query.eq("status", status);
@@ -24,13 +24,13 @@ export class BiometricService {
   static async getById(id: number) {
     return await supabase
       .from("biometric_device")
-      .select("*")
+      .select("*, tenant:tenant_id(id, name)")
       .eq("id", id)
       .single();
   }
 
   static async create(payload: any) {
-    return await supabase.from("biometric_device").insert([payload]).select();
+    return await supabase.from("biometric_device").insert([payload]).select("*, tenant:tenant_id(id, name)");
   }
 
   static async update(id: number, payload: any) {
@@ -38,7 +38,7 @@ export class BiometricService {
       .from("biometric_device")
       .update(payload)
       .eq("id", id)
-      .select();
+      .select("*, tenant:tenant_id(id, name)");
   }
 
   static async delete(id: number) {
