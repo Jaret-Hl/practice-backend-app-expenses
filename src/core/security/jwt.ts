@@ -4,6 +4,9 @@ import { ENV } from "../env.js";
 export type JwtPayload = Omit<JwtPayloadDefault, "sub"> & {
   sub: number;
   email: string;
+  roles?: string[];
+  permissions?: string[];
+  isAdmin?: boolean;
 };
 
 export type RefreshJwtPayload = Omit<JwtPayloadDefault, "sub"> & {

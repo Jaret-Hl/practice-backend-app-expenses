@@ -7,6 +7,9 @@ declare global {
         id: number;
         email: string;
         name?: string;
+        roles?: string[];
+        permissions?: string[];
+        isAdmin?: boolean;
       };
     }
   }

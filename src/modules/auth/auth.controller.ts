@@ -4,6 +4,7 @@ import { hashPassword, comparePasswords } from "../../core/security/bcrypt.js";
 import { revokeToken } from "../../core/security/tokenBlacklist.js";
 import { signJwt, signRefreshJwt, verifyRefreshJwt } from "../../core/security/jwt.js";
 import { validatePasswordStrength } from "../../core/security/passwordValidator.js";
+import { getUserRolesAndPermissions } from "../../core/security/rbac.service.js";
 
 export const registerUser = async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
@@ -22,7 +23,7 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 
   const { data: existingUser, error: existenceError } = await supabase
-    .from("user")
+    .from("users")
     .select("id")
     .eq("email", email)
     .limit(1)
@@ -47,13 +48,35 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 
   const { data, error } = await supabase
-    .from("user")
+    .from("users")
     .insert([newUser])
     .select("id, email, name")
     .single();
 
   if (error) {
     return res.status(500).json({ error: "Error interno del servidor" });
+  }
+
+  // Obtener dinámicamente el ID del rol 'viewer'
+  const { data: viewerRole, error: roleQueryError } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", "viewer")
+    .single();
+
+  if (roleQueryError || !viewerRole) {
+    console.error("Error al obtener rol viewer:", roleQueryError);
+    return res.status(500).json({ error: "Error al asignar rol por defecto" });
+  }
+
+  // Asignar rol por defecto 'viewer' al nuevo usuario
+  const { error: roleError } = await supabase
+    .from("user_roles")
+    .insert([{ user_id: data.id, role_id: viewerRole.id }]);
+
+  if (roleError) {
+    console.error("Error al asignar rol:", roleError);
+    return res.status(500).json({ error: "Error al asignar rol por defecto" });
   }
 
   const token = signJwt({ sub: data.id, email: data.email });
@@ -74,7 +97,7 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 
   const { data, error } = await supabase
-    .from("user")
+    .from("users")
     .select("id, email, name, password_hash")
     .eq("email", email)
     .limit(1)
@@ -89,11 +112,27 @@ export const loginUser = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Credenciales inválidas" });
   }
 
-  const token = signJwt({ sub: data.id, email: data.email });
+  // Get user roles and permissions
+  const userWithRBAC = await getUserRolesAndPermissions(data.id);
+
+  const token = signJwt({
+    sub: data.id,
+    email: data.email,
+    roles: userWithRBAC?.roles || [],
+    permissions: userWithRBAC?.permissions || [],
+    isAdmin: userWithRBAC?.isAdmin || false,
+  });
   const refreshToken = signRefreshJwt(data.id);
 
-  return res.json({ 
-    user: { id: data.id, email: data.email, name: data.name }, 
+  return res.json({
+    user: {
+      id: data.id,
+      email: data.email,
+      name: data.name,
+      roles: userWithRBAC?.roles || [],
+      permissions: userWithRBAC?.permissions || [],
+      isAdmin: userWithRBAC?.isAdmin || false,
+    },
     token,
     refreshToken,
   });
@@ -136,8 +175,8 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     // Get user data to include in new access token
     const { data: user, error } = await supabase
-      .from("user")
-      .select("id, email")
+      .from("users")
+      .select("id, email, name")
       .eq("id", decoded.sub)
       .single();
 
@@ -145,8 +184,17 @@ export const refreshToken = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Usuario no encontrado" });
     }
 
-    // Generate new access token
-    const newAccessToken = signJwt({ sub: user.id, email: user.email });
+    // Get user roles and permissions
+    const userWithRBAC = await getUserRolesAndPermissions(user.id);
+
+    // Generate new access token with RBAC data
+    const newAccessToken = signJwt({
+      sub: user.id,
+      email: user.email,
+      roles: userWithRBAC?.roles || [],
+      permissions: userWithRBAC?.permissions || [],
+      isAdmin: userWithRBAC?.isAdmin || false,
+    });
 
     // Optionally generate new refresh token (token rotation)
     const newRefreshToken = signRefreshJwt(user.id);
