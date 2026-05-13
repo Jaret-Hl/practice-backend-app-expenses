@@ -10,12 +10,6 @@ export const getTenants = async (req: Request, res: Response) => {
   
   let query = supabase.from("tenant").select("*", { count: "exact" });
   
-  // Filter by current user
-  if (userId) {
-    query = query.eq("created_by_user_id", userId);
-  }
-  
-  // 3. aplicar filtro condicionalmente
   if (is_active !== undefined) {
     const isActiveBool = is_active === "true";
     query = query.eq("is_active", isActiveBool);
@@ -92,7 +86,7 @@ export const createTenant = async (req: Request, res: Response) => {
 };
 
 export const updateTenant = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);
   const userId = req.user?.id;
 
   if (!userId) {
