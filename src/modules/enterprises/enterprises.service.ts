@@ -21,12 +21,20 @@ export class EnterpriseService {
       query = query.eq("active_cyh", active_cyh === "true");
     }
 
-    if (search) {
-      try {
-        query = applySearchFilter(query, search, ["name", "code_enterprise"]);
-      } catch (err: any) {
-        return { error: err.message };
-      }
+    // if (search) {
+    //   try {
+    //     query = applySearchFilter(query, search, ["name", "code_enterprise"]);
+    //   } catch (err: any) {
+    //     return { error: err.message };
+    //   }
+    // }
+
+    const term = typeof search === "string" ? search.trim() : "";
+    if(term.length >= 3) {
+      const like = `%${term}%`;
+      query = query.or(`name.ilike.${like},code_enterprise.ilike.${like}`);
+    } else if (term.length > 0) {
+      return { error: "El término de búsqueda debe tener al menos 3 caracteres" };
     }
 
     // Apply pagination

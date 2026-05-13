@@ -26,19 +26,13 @@ export const getEnterprises = async (req: Request, res: Response) => {
 
 export const getEnterpriseById = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
-  const userId = req.user?.id;
 
   if (!id) return res.status(400).json({ error: "ID inválido" });
 
   const { data, error } = await EnterpriseService.getById(id);
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
-  if (!data) return res.status(404).json({ error: "Empresa no encontrado" });
-
-  // Authorization check - user must own the resource
-  if (data.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para acceder a este recurso" });
-  }
+  if (!data) return res.status(404).json({ error: "Empresa no encontrada" });
 
   res.json(data);
 };
@@ -69,22 +63,12 @@ export const updateEnterprise = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
 
-  // Check if enterprise exists and user owns it
-  const { data: existingEnterprise, error: fetchError } = await supabase
-    .from("enterprise")
-    .select("*")
-    .eq("id", id)
-    .single();
+  // Verificar que la empresa existe
+  const { data: existingEnterprise, error: fetchError } = await EnterpriseService.getById(id);
 
   if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
-
   if (!existingEnterprise) {
     return res.status(404).json({ error: "Empresa no encontrada" });
-  }
-
-  // Authorization check
-  if (existingEnterprise.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para modificar este recurso" });
   }
 
   const updatedEnterprise = {
@@ -113,18 +97,12 @@ export const deleteEnterprise = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
 
-  // Check if enterprise exists and user owns it
+  // Verificar que la empresa existe
   const { data: existingEnterprise, error: fetchError } = await EnterpriseService.getById(id);
 
   if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
-
   if (!existingEnterprise) {
     return res.status(404).json({ error: "Empresa no encontrada" });
-  }
-
-  // Authorization check
-  if (existingEnterprise.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para eliminar este recurso" });
   }
 
   const { error } = await EnterpriseService.delete(id);
