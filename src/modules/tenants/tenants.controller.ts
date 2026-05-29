@@ -56,9 +56,10 @@ export const getTenantById = async (req: Request, res: Response) => {
   if (!data) return res.status(404).json({ error: "No se encontró el tenant" });
 
   // Authorization check - user must own the resource
-  if (data.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para acceder a este recurso" });
-  }
+  // if (data.created_by_user_id !== userId) {
+  //   return res.status(403).json({ error: "No tienes permiso para acceder a este recurso" });
+  // }
+  // 
 
   res.json(data);
 };
