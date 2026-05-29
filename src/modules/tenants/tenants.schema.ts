@@ -9,7 +9,7 @@ export const TenantBaseSchema = z.object({
 });
 
 export const TenantCreateSchema = TenantBaseSchema.extend({
-  created_by_user_id: z.number(),
+  created_by_user_id: z.number().optional(),
 });
 
 export const TenantUpdateSchema = TenantBaseSchema.partial().extend({

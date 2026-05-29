@@ -8,12 +8,7 @@ export const getBiometrics = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const pagination = parsePagination(page as string | number, limit as string | number);
   
-  let query = supabase.from("biometric_device").select("*, tenant:tenant_id(id, name)", { count: "exact" });
-  
-  // Filter by current user
-  if (userId) {
-    query = query.eq("created_by_user_id", userId);
-  }
+  let query = supabase.from("biometric_device").select("*, tenant:tenant_id(id, name)", { count: "exact" });  
   
   // 3. aplicar filtro condicionalmente
   if (status !== undefined) {
@@ -60,11 +55,6 @@ export const getBiometricById = async (req: Request, res: Response) => {
   if (error && error.code !== "PGRST116")
     return res.status(500).json({ error: "Error interno del servidor" });
   if (!data) return res.status(404).json({ error: "No se encontró el biométrico" });
-
-  // Authorization check - user must own the resource
-  if (data.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para acceder a este recurso" });
-  }
 
   res.json(data);
 };
