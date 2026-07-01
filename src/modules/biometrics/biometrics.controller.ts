@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { supabase } from '../../core/db.js';
 import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
+import { BiometricCreateDTO } from "./biometrics.schema.js";
 
 export const getBiometrics = async (req: Request, res: Response) => {
   const { status, search, page, limit } = req.query;
@@ -61,23 +62,54 @@ export const getBiometricById = async (req: Request, res: Response) => {
 
 export const createBiometric = async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const { tenant_id, brand, model, serial_number, reception_date, installation_date, warranty_period, status, location_state, branch, hc_count, observations } = req.body;
-  
+  const {
+    tenant_id,
+    brand,
+    model,
+    serial_number,
+    reception_date,
+    installation_date,
+    warranty_period,
+    status,
+    location_state,
+    branch,
+    hc_count,
+    observations,
+  } = req.body as BiometricCreateDTO;
+
   if (!userId) {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
-  
-  if (!tenant_id || !brand || !model || !serial_number) {
-    return res.status(400).json({ error: "Faltan datos requeridos" });
-  }
-  
+
+  const payload = {
+    tenant_id,
+    brand,
+    model,
+    serial_number,
+    reception_date,
+    installation_date,
+    warranty_period,
+    status,
+    location_state,
+    branch,
+    hc_count,
+    observations,
+    created_by_user_id: userId,
+  };
+
   const { data, error } = await supabase
     .from("biometric_device")
-    .insert([{ tenant_id, brand, model, serial_number, reception_date, installation_date, warranty_period, status, location_state, branch, hc_count, observations, created_by_user_id: userId }])
+    .insert([payload])
     .select("*, tenant:tenant_id(id, name)");
 
-  if (error)
-    return res.status(500).json({ error: "Error interno del servidor" });
+  if (error) {
+    return res.status(500).json({ error: error.message ?? "Error interno del servidor" });
+  }
+
+  if (!data || data.length === 0) {
+    return res.status(500).json({ error: "No se pudo crear el biométrico" });
+  }
+
   res.status(201).json(data[0]);
 };
 
