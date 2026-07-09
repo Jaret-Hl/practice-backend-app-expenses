@@ -5,12 +5,12 @@ import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pag
 import { supabase } from '../../core/db.js';
 
 export const getEnterprises = async (req: Request, res: Response) => {
-  const { active_cyh, search, page, limit } = req.query;
+  const { is_active, search, page, limit } = req.query;
   const userId = req.user?.id;
   const pagination = parsePagination(page as string | number, limit as string | number);
 
   const { data, error, count } = await EnterpriseService.getAll({
-    active_cyh: active_cyh as string,
+    is_active: is_active === "true" ? true : is_active === "false" ? false : undefined,
     search: search as string,
     userId,
     limit: pagination.limit,

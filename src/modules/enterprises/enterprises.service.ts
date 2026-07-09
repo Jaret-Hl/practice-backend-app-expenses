@@ -3,13 +3,13 @@ import { supabase } from "../../core/db.js";
 
 export class EnterpriseService {
   static async getAll({
-    active_cyh,
+    is_active,
     search,
     userId,
     limit,
     offset,
   }: {
-    active_cyh?: string;
+    is_active?: boolean;
     search?: string;
     userId?: number;
     limit?: number;
@@ -17,17 +17,17 @@ export class EnterpriseService {
   }) {
     let query = supabase.from("enterprise").select("*", { count: "exact" });
 
-    if (active_cyh !== undefined) {
-      query = query.eq("active_cyh", active_cyh === "true");
+    if (is_active !== undefined) {
+      query = query.eq("is_active", is_active === true);
     }
 
-    // if (search) {
-    //   try {
-    //     query = applySearchFilter(query, search, ["name", "code_enterprise"]);
-    //   } catch (err: any) {
-    //     return { error: err.message };
-    //   }
-    // }
+    if (search) {
+      try {
+        query = applySearchFilter(query, search, ["name", "code_enterprise"]);
+      } catch (err: any) {
+        return { error: err.message };
+      }
+    }
 
     const term = typeof search === "string" ? search.trim() : "";
     if(term.length >= 3) {

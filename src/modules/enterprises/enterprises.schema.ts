@@ -3,7 +3,7 @@ import { z } from "zod";
 export const EnterpriseBaseSchema = z.object({
   name: z.string().min(1),
   code_enterprise: z.string().min(1),
-  active_cyh: z.boolean().default(true),
+  is_active: z.boolean().default(true),
   plaza: z.string().min(1),
 });
 
