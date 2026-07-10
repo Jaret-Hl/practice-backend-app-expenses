@@ -35,6 +35,7 @@ export const PERMISSIONS = {
 
   // User/Admin permissions
   USER_READ: "user:read",
+  USER_CREATE: "user:create",
   USER_UPDATE: "user:update",
   USER_DELETE: "user:delete",
   USER_MANAGE_ROLES: "user:manage_roles",
