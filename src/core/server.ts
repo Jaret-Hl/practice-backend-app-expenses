@@ -14,6 +14,7 @@ import expensesRoutes from "../modules/expenses/expenses.routes.js";
 import enterprisesRoutes from "../modules/enterprises/enterprises.routes.js";
 import biometricRoutes from "../modules/biometrics/biometric.routes.js";
 import rbacRoutes from "../modules/rbac/rbac.routes.js";
+import userRoutes from "../modules/users/users.routes.js";
 
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
@@ -67,7 +68,7 @@ export const startServer = () => {
   app.use("/api", enterprisesRoutes);
   app.use("/api", biometricRoutes);
   app.use("/api", rbacRoutes);
-
+  app.use("/api", userRoutes);
   // Error handling middleware (must be last)
   app.use(errorHandler);
 
