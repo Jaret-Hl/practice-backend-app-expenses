@@ -17,6 +17,8 @@ import { authenticateJWT } from "../../shared/middlewares/auth.middleware.js";
 import { authorize } from "../../shared/middlewares/authorization.middleware.js";
 import { PERMISSIONS } from "../../shared/constants/permissions.js";
 
+import riskRatesRoutes from "./submodules/enterprise-risk-rate/enterprise-risk-rate.routes.js";
+
 const router = Router();
 
 router.get(
@@ -55,5 +57,7 @@ router.delete(
   authorize([PERMISSIONS.ENTERPRISE_DELETE]),
   deleteEnterprise,
 );
+
+router.use('/enterprises/:enterpriseId/risk-rate', riskRatesRoutes)
 
 export default router;
