@@ -1,49 +1,56 @@
 import { applySearchFilter } from "../../shared/filters/search.js";
+import { applyDynamicFilters } from "../../shared/filters/dynamic-filter.js";
+import { ENTERPRISE_FILTERABLE_FIELDS } from "./enterprises.filters.js";
 import { supabase } from "../../core/db.js";
 
 export class EnterpriseService {
   static async getAll({
-    is_active,
     search,
-    userId,
+    filters,
     limit,
     offset,
   }: {
-    is_active?: boolean;
     search?: string;
-    userId?: number;
+    filters?: Record<string, any>;
     limit?: number;
     offset?: number;
   }) {
     let query = supabase.from("enterprise").select("*", { count: "exact" });
 
-    if (is_active !== undefined) {
-      query = query.eq("is_active", is_active === true);
+    if (filters) {
+      query = applyDynamicFilters(query, filters, ENTERPRISE_FILTERABLE_FIELDS);
     }
 
-    if (search) {
-      try {
-        query = applySearchFilter(query, search, ["name", "code_enterprise"]);
-      } catch (err: any) {
-        return { error: err.message };
-      }
-    }
-
-    const term = typeof search === "string" ? search.trim() : "";
-    if(term.length >= 3) {
-      const like = `%${term}%`;
-      query = query.or(`name.ilike.${like},code_enterprise.ilike.${like}`);
+    const term = search?.trim() ?? "";
+    if (term.length >= 3) {
+      query = query.or(`name.ilike.%${term}%,code_enterprise.ilike.%${term}%`);
     } else if (term.length > 0) {
-      return { error: "El término de búsqueda debe tener al menos 3 caracteres" };
+      return {
+        error: "El término de búsqueda debe tener al menos 3 caracteres",
+      };
     }
 
-    // Apply pagination
-    if (limit && offset !== undefined) {
+    if (limit && offset !== undefined)
       query = query.range(offset, offset + limit - 1);
-    }
 
     const { data, error, count } = await query;
     return { data, error, count };
+  }
+
+  static async getFacetValues(field: string) {
+    // trae solo esa columna, sin duplicados, sin nulls
+    const { data, error } = await supabase
+      .from("enterprise")
+      .select(field)
+      .not(field, "is", null);
+
+    if (error) return { error: error.message };
+
+    const unique = Array.from(new Set(data.map((row: any) => row[field])))
+      .filter(Boolean)
+      .sort();
+
+    return { data: unique };
   }
 
   static async getById(id: number) {

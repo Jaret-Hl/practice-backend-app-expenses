@@ -4,15 +4,20 @@ import { EnterpriseUpdateSchema } from "./enterprises.schema.js";
 import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
 import { supabase } from '../../core/db.js';
 
+import { extractFilters } from "../../shared/filters/extract-filters.js";
+import { ENTERPRISE_FILTERABLE_FIELDS } from "./enterprises.filters.js";
+
+const FACET_ALLOWED_FIELDS = ["plaza"]; // whitelist: solo campos categorizables
+
+
 export const getEnterprises = async (req: Request, res: Response) => {
-  const { is_active, search, page, limit } = req.query;
-  const userId = req.user?.id;
+  const { search, page, limit } = req.query;
   const pagination = parsePagination(page as string | number, limit as string | number);
+  const filters = extractFilters(req.query, ENTERPRISE_FILTERABLE_FIELDS);
 
   const { data, error, count } = await EnterpriseService.getAll({
-    is_active: is_active === "true" ? true : is_active === "false" ? false : undefined,
     search: search as string,
-    userId,
+    filters,
     limit: pagination.limit,
     offset: pagination.offset,
   });
@@ -22,6 +27,22 @@ export const getEnterprises = async (req: Request, res: Response) => {
   const totalCount = count || 0;
   const formattedResponse = formatPaginatedResponse(data || [], pagination.page, pagination.limit, totalCount);
   res.json(formattedResponse);
+};
+
+export const getEnterpriseFacets = async (req: Request, res: Response) => {
+  const fields = String(req.query.fields || "")
+    .split(",")
+    .map((f) => f.trim())
+    .filter((f) => FACET_ALLOWED_FIELDS.includes(f));
+
+  const results: Record<string, string[]> = {};
+
+  for (const field of fields) {
+    const { data, error } = await EnterpriseService.getFacetValues(field);
+    if (!error) results[field] = data as string[];
+  }
+
+  res.json(results);
 };
 
 export const getEnterpriseById = async (req: Request, res: Response) => {
