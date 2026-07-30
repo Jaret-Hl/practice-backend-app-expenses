@@ -5,6 +5,7 @@ import {
   createEnterprise,
   updateEnterprise,
   deleteEnterprise,
+  getEnterpriseFacets,
 } from "../enterprises/enterprises.controller.js";
 import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { checkPermission } from "../../shared/middlewares/permission.middleware.js";
@@ -26,6 +27,13 @@ router.get(
   authenticateJWT,
   authorize([PERMISSIONS.ENTERPRISE_READ]),
   getEnterprises,
+);
+
+router.get(
+  "/enterprises/facets",
+  authenticateJWT,
+  authorize([PERMISSIONS.ENTERPRISE_READ]),
+  getEnterpriseFacets,
 );
 
 router.get(
