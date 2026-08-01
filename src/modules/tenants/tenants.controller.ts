@@ -1,37 +1,54 @@
 // src/controllers/tenants.controller.js
 import { Request, Response } from "express";
-import { supabase } from '../../core/db.js';
-import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
+import { supabase } from "../../core/db.js";
+import {
+  parsePagination,
+  formatPaginatedResponse,
+} from "../../shared/utils/pagination.js";
 
 export const getTenants = async (req: Request, res: Response) => {
   const { is_active, search, page, limit } = req.query;
   const userId = req.user?.id;
-  const pagination = parsePagination(page as string | number, limit as string | number);
-  
+  const pagination = parsePagination(
+    page as string | number,
+    limit as string | number,
+  );
+
   let query = supabase.from("tenant").select("*", { count: "exact" });
-  
+
   if (is_active !== undefined) {
     const isActiveBool = is_active === "true";
     query = query.eq("is_active", isActiveBool);
   }
 
   const term = typeof search === "string" ? search.trim() : "";
-  if(term.length >= 3) {
+  if (term.length >= 3) {
     const like = `%${term}%`;
     query = query.or(`name.ilike.${like},description.ilike.${like}`);
   } else if (term.length > 0) {
-    return res.status(400).json({ warning: "El término de búsqueda debe tener al menos 3 caracteres" });
+    return res.status(400).json({
+      warning: "El término de búsqueda debe tener al menos 3 caracteres",
+    });
   }
 
   // Apply pagination
-  query = query.range(pagination.offset, pagination.offset + pagination.limit - 1);
+  query = query.range(
+    pagination.offset,
+    pagination.offset + pagination.limit - 1,
+  );
 
   const { data, error, count } = await query;
 
-  if (error) return res.status(500).json({ error: "Error interno del servidor" });
-  
+  if (error)
+    return res.status(500).json({ error: "Error interno del servidor" });
+
   const totalCount = count || 0;
-  const formattedResponse = formatPaginatedResponse(data || [], pagination.page, pagination.limit, totalCount);
+  const formattedResponse = formatPaginatedResponse(
+    data || [],
+    pagination.page,
+    pagination.limit,
+    totalCount,
+  );
   res.json(formattedResponse);
 };
 
@@ -39,7 +56,7 @@ export const getTenantById = async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = req.user?.id;
   const idStr = Array.isArray(id) ? id[0] : id;
-  
+
   // Validar que id sea un número
   if (isNaN(Number(idStr)) || !idStr) {
     return res.status(400).json({ error: "El ID debe ser un número válido" });
@@ -59,7 +76,7 @@ export const getTenantById = async (req: Request, res: Response) => {
   // if (data.created_by_user_id !== userId) {
   //   return res.status(403).json({ error: "No tienes permiso para acceder a este recurso" });
   // }
-  // 
+  //
 
   res.json(data);
 };
@@ -67,22 +84,27 @@ export const getTenantById = async (req: Request, res: Response) => {
 export const createTenant = async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const { name, description, link, is_active } = req.body;
-  
+
   if (!userId) {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
-  
-  if (!name || !description || !link || is_active === undefined) {
-    return res.status(400).json({ error: "Faltan datos requeridos" });
-  }
-  
+
   const { data, error } = await supabase
     .from("tenant")
-    .insert([{ name, description, link, is_active, created_by_user_id: userId }])
+    .insert([
+      { name, description, link, is_active, created_by_user_id: userId },
+    ])
     .select();
 
-  if (error)
+  if (error) {
+    //devuelve codigo 2305 cuando choque con el constraint
+    if (error.code === "23505") {
+      return res
+        .status(409)
+        .json({ error: "Ya existe un tenant con ese nombre o link" });
+    }
     return res.status(500).json({ error: "Error interno del servidor" });
+  }
   res.status(201).json(data[0]);
 };
 
@@ -101,7 +123,8 @@ export const updateTenant = async (req: Request, res: Response) => {
     .eq("id", id)
     .single();
 
-  if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
+  if (fetchError)
+    return res.status(500).json({ error: "Error interno del servidor" });
 
   if (!existingTenant) {
     return res.status(404).json({ error: "Tenant no encontrado" });
@@ -109,7 +132,9 @@ export const updateTenant = async (req: Request, res: Response) => {
 
   // Authorization check
   if (existingTenant.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para modificar este recurso" });
+    return res
+      .status(403)
+      .json({ error: "No tienes permiso para modificar este recurso" });
   }
 
   const updatedTenant = {
@@ -117,19 +142,31 @@ export const updateTenant = async (req: Request, res: Response) => {
     updated_at: new Date().toISOString(),
     updated_by_user_id: userId,
   };
-
   const { data, error } = await supabase
     .from("tenant")
     .update(updatedTenant)
     .eq("id", id)
+    .eq("created_by_user_id", userId)
     .select();
-
   if (error)
     return res.status(500).json({ error: "Error interno del servidor" });
+  if (error) {
+    if (error.code === "23505") {
+      return res
+        .status(409)
+        .json({ error: "Ya existe un tenant con ese nombre o link" });
+    }
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+
+  if (!data || data.length === 0) {
+    // No sabemos aquí si no existe o si existe pero no es del usuario.
+    // Devolver 404 en ambos casos evita filtrar información de existencia (no user enumeration).
+    return res.status(404).json({ error: "Tenant no encontrado" });
+  }
 
   res.json(data[0]);
 };
-
 
 export const deleteTenant = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -146,7 +183,8 @@ export const deleteTenant = async (req: Request, res: Response) => {
     .eq("id", id)
     .single();
 
-  if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
+  if (fetchError)
+    return res.status(500).json({ error: "Error interno del servidor" });
 
   if (!existingTenant) {
     return res.status(404).json({ error: "Tenant no encontrado" });
@@ -154,17 +192,24 @@ export const deleteTenant = async (req: Request, res: Response) => {
 
   // Authorization check
   if (existingTenant.created_by_user_id !== userId) {
-    return res.status(403).json({ error: "No tienes permiso para eliminar este recurso" });
+    return res
+      .status(403)
+      .json({ error: "No tienes permiso para eliminar este recurso" });
   }
 
   const { data, error } = await supabase
     .from("tenant")
     .delete()
     .eq("id", id)
+    .eq("created_by_user_id", userId)
     .select();
-
   if (error)
     return res.status(500).json({ error: "Error interno del servidor" });
+
+  if (!data || data.length === 0) {
+    return res.status(404).json({ error: "Tenant no encontrado" });
+  }
+
   res.json({ message: `Tenant with ID: ${id} deleted` });
 };
 
