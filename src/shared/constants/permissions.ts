@@ -47,6 +47,13 @@ export const PERMISSIONS = {
   TENANT_DELETE: "tenants:delete",
   TENANT_MANAGE: "tenants:manage",
 
+  // Risk rate permissions
+  RISKRATE_READ: "riskrates:read",
+  RISKRATE_CREATE: "riskrates:create",
+  RISKRATE_UPDATE: "riskrates:update",
+  RISKRATE_DELETE: "riskrates:delete",
+  RISKRATE_MANAGE: "riskrates:manage",
+  
   // RBAC Management permissions
   RBAC_MANAGE_ROLES: "rbac:manage_roles",
   RBAC_MANAGE_PERMISSIONS: "rbac:manage_permissions",
