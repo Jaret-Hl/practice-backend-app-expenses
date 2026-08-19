@@ -19,14 +19,14 @@ const router = Router({ mergeParams: true });
 router.get(
   "/",
   authenticateJWT,
-  authorize([]),
+  authorize([PERMISSIONS.RISKRATE_READ]),
   getEnterprisesRiskRate,
 );
 
 router.get(
   "/:riskRateId",
   authenticateJWT,
-  authorize([]),
+  authorize([PERMISSIONS.RISKRATE_READ]),
   getEnterpriseRiskRateById,
 );
 
