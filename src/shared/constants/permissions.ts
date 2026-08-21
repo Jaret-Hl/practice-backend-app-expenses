@@ -53,6 +53,9 @@ export const PERMISSIONS = {
   RISKRATE_UPDATE: "riskrates:update",
   RISKRATE_DELETE: "riskrates:delete",
   RISKRATE_MANAGE: "riskrates:manage",
+
+  // Hardware Devices permissions
+  HARDWARE_DEVICES_READ: "hardwaredevices:read",
   
   // RBAC Management permissions
   RBAC_MANAGE_ROLES: "rbac:manage_roles",
