@@ -12,6 +12,17 @@ export const PERMISSIONS = {
   ENTERPRISE_DELETE: "enterprises:delete",
   ENTERPRISE_LIST: "enterprises:list",
 
+  // Submodules permissions enterprises: branch, contact, certificate, document, log, and settings.
+  // BRANCH_READ: "branch:read",
+  // BRANCH_CREATE: "branch:create",
+  // BRANCH_UPDATE: "branch:update",
+  // BRANCH_DELETE: "branch:delete",
+
+  CONTACT_READ: "contact:read",
+  CONTACT_CREATE: "contact:create",
+  CONTACT_UPDATE: "contact:update",
+  CONTACT_DELETE: "contact:delete",
+
   // Expense permissions
   EXPENSE_READ: "expense:read",
   EXPENSE_CREATE: "expense:create",
@@ -53,6 +64,12 @@ export const PERMISSIONS = {
   RISKRATE_UPDATE: "riskrates:update",
   RISKRATE_DELETE: "riskrates:delete",
   RISKRATE_MANAGE: "riskrates:manage",
+
+  // Person permissions
+  PERSON_READ: "persons:read",
+  PERSON_CREATE: "persons:create",
+  PERSON_UPDATE: "persons:update",
+  PERSON_DELETE: "persons:delete",
 
   // Hardware Devices permissions
   HARDWARE_DEVICES_READ: "hardwaredevices:read",
