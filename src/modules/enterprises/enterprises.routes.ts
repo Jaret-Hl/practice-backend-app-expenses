@@ -19,6 +19,7 @@ import { authorize } from "../../shared/middlewares/authorization.middleware.js"
 import { PERMISSIONS } from "../../shared/constants/permissions.js";
 
 import riskRatesRoutes from "./submodules/enterprise-risk-rate/enterprise-risk-rate.routes.js";
+import enterpriseContactRoutes from "./submodules/enterprise-contact/enterprise-contact.routes.js";
 
 const router = Router();
 
@@ -67,5 +68,6 @@ router.delete(
 );
 
 router.use('/enterprises/:enterpriseId/risk-rate', riskRatesRoutes)
+router.use('/enterprises/:enterpriseId/contacts', enterpriseContactRoutes)
 
 export default router;

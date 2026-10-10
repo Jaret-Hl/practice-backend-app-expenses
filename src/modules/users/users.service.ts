@@ -1,6 +1,9 @@
 import { applySearchFilter } from "../../shared/filters/search.js";
 import { supabase } from "../../core/db.js";
 
+const USER_WITH_PERSON_SELECT =
+  "*, person:person_id(id, first_name, last_name, email, phone)";
+
 export class UserService {
   static async getAll({
     is_active,
@@ -15,7 +18,9 @@ export class UserService {
     limit?: number;
     offset?: number;
   }) {
-    let query = supabase.from("users").select("*", { count: "exact" });
+    let query = supabase
+      .from("users")
+      .select(USER_WITH_PERSON_SELECT, { count: "exact" });
 
     if (is_active !== undefined) {
       query = query.eq("is_active", is_active === true);
@@ -30,14 +35,13 @@ export class UserService {
     }
 
     const term = typeof search === "string" ? search.trim() : "";
-    if(term.length >= 3) {
+    if (term.length >= 3) {
       const like = `%${term}%`;
       query = query.or(`name.ilike.${like}`);
     } else if (term.length > 0) {
       return { error: "El término de búsqueda debe tener al menos 3 caracteres" };
     }
 
-    // Apply pagination
     if (limit && offset !== undefined) {
       query = query.range(offset, offset + limit - 1);
     }
@@ -47,7 +51,11 @@ export class UserService {
   }
 
   static async getById(id: number) {
-    return await supabase.from("users").select("*").eq("id", id).single();
+    return await supabase
+      .from("users")
+      .select(USER_WITH_PERSON_SELECT)
+      .eq("id", id)
+      .single();
   }
 
   static async create(payload: any) {
@@ -64,5 +72,18 @@ export class UserService {
 
   static async delete(id: number) {
     return await supabase.from("users").delete().eq("id", id).select();
+  }
+
+  /**
+   * Vincula un usuario existente con una persona (Etapa 3 de la migración:
+   * users.person_id). Úsalo también en el flujo de alta de usuario nuevo,
+   * una vez que primero se creó/encontró la persona correspondiente.
+   */
+  static async linkPerson(userId: number, personId: number) {
+    return await supabase
+      .from("users")
+      .update({ person_id: personId })
+      .eq("id", userId)
+      .select(USER_WITH_PERSON_SELECT);
   }
 }

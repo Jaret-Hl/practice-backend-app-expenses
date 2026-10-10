@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { UserService } from "./users.service.js";
-import { UserUpdateSchema } from "./users.schema.js";
 import { parsePagination, formatPaginatedResponse } from "../../shared/utils/pagination.js";
-import { supabase } from '../../core/db.js';
 
 export const getUsers = async (req: Request, res: Response) => {
   const { is_active, search, page, limit } = req.query;
@@ -18,7 +16,7 @@ export const getUsers = async (req: Request, res: Response) => {
   });
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
-  
+
   const totalCount = count || 0;
   const formattedResponse = formatPaginatedResponse(data || [], pagination.page, pagination.limit, totalCount);
   res.json(formattedResponse);
@@ -32,7 +30,7 @@ export const getUserById = async (req: Request, res: Response) => {
   const { data, error } = await UserService.getById(id);
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
-  if (!data) return res.status(404).json({ error: "Empresa no encontrada" });
+  if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
 
   res.json(data);
 };
@@ -63,12 +61,11 @@ export const updateUser = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
 
-  // Verificar que la empresa existe
   const { data: existingUser, error: fetchError } = await UserService.getById(id);
 
   if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
   if (!existingUser) {
-    return res.status(404).json({ error: "Empresa no encontrada" });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
   const updatedUser = {
@@ -77,16 +74,15 @@ export const updateUser = async (req: Request, res: Response) => {
     updated_by_user_id: userId,
   };
 
-  const { data, error} = await supabase
-    .from("enterprise")
-    .update(updatedUser)
-    .eq("id", id)
-    .select()
+  // BUGFIX: esta función actualizaba por error la tabla "enterprise" en vez
+  // de "users" (probablemente copiado del controller de enterprises).
+  // Ahora usa UserService.update, igual que el resto de los métodos de este
+  // controller.
+  const { data, error } = await UserService.update(id, updatedUser);
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
 
   res.json(data[0]);
-
 };
 
 export const deleteUser = async (req: Request, res: Response) => {
@@ -97,17 +93,16 @@ export const deleteUser = async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Usuario no autenticado" });
   }
 
-  // Verificar que la empresa existe
   const { data: existingUser, error: fetchError } = await UserService.getById(id);
 
   if (fetchError) return res.status(500).json({ error: "Error interno del servidor" });
   if (!existingUser) {
-    return res.status(404).json({ error: "Empresa no encontrada" });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
   const { error } = await UserService.delete(id);
 
   if (error) return res.status(500).json({ error: "Error interno del servidor" });
 
-  res.json({ message: `Empresa ${id} eliminada` });
+  res.json({ message: `Usuario ${id} eliminado` });
 };
